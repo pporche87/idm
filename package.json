@@ -24,7 +24,8 @@
     "data:users": "./node_modules/.bin/babel-node test/generateUsers",
     "lint": "./node_modules/.bin/xo",
     "start": "npm run icons:fetch && node server",
-    "postinstall": "npm run build",
+    "postinstall": "npm run symlinks && npm run build",
+    "symlinks": "./node_modules/.bin/babel-node ./scripts/createSymlinks",
     "test:ci": "npm run db:create && npm run db:migrate:up && npm run test:cov",
     "test:cov": "npm run test:cov:run && npm run test:cov:send",
     "test:cov:run": "./node_modules/.bin/nyc --reporter=lcov npm run test:run",
@@ -148,6 +149,7 @@
       "comma-dangle": [
         0
       ],
+      "import/no-extraneous-dependencies": 0,
       "no-negated-condition": [
         0
       ],

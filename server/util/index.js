@@ -8,6 +8,10 @@ export function formatServerError(err = {}) {
   if (/Reql\w+Error/.test(serverError.name) || (serverError.originalError &&
       /Reql\w+Error/.test(serverError.originalError.name))) {
     serverError.statusCode = 500
+  } else if (serverError.name === 'BadRequestError') {
+    serverError.statusCode = err.code || 400
+    serverError.type = err.type || err.message
+    serverError.message = err.message
   } else if (!(serverError instanceof GraphQLError)) {
     // only set default statusCode for non-GraphQLError instances
     serverError.statusCode = err.code || 500
@@ -17,7 +21,7 @@ export function formatServerError(err = {}) {
     serverError.message = 'An internal server error occurred'
     serverError.type = 'Internal Server Error'
 
-    if (serverError.hasOwnProperty('originalError')) {
+    if (serverError.originalError) {
       delete serverError.originalError
     }
   }
