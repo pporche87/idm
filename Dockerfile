@@ -6,26 +6,19 @@ MAINTAINER jeffrey@learnersguild.org
 # Set the WORKDIR to /app so all following commands run in /app
 WORKDIR /app
 
-# Create symlinks to local source dirs in the node_modules directory for easier module imports
-RUN mkdir ./node_modules
-RUN mkdir ./node_modules/src
-
-WORKDIR ./node_modules/src
-
-RUN ln -s ../../client ./client
-RUN ln -s ../../common ./common
-RUN ln -s ../../config ./config
-RUN ln -s ../../db ./db
-RUN ln -s ../../server ./server
-RUN ln -s ../../scripts ./scripts
-RUN ln -s ../../test ./test
-
-WORKDIR /app
-
-# COPY the package.json and if you use npm shrinkwrap the npm-shrinkwrap.json and
-# install npm dependencies before copying the whole code into the container.
+# COPY the package.json and if you use npm shrinkwrap the npm-shrinkwrap.json
+# and install npm dependencies before copying the whole code into the container
+# (which avoids prematurely invalidating the docker cache)
 COPY package.json ./
-RUN npm install
 
-# After installing dependencies copy the whole codebase into the Container to not invalidate the cache before
+# Since we only did a COPY of package.json above rather than the whole codebase,
+# we cannot run postinstall yet, so we pass the --ignore-scripts flag
+RUN npm install --ignore-scripts
+
+# After installing dependencies, copy the whole codebase into the container
 COPY . ./
+
+# Because we did --ignore-scripts above during `npm install`, run postinstall
+# here. We need the --usafe-perm flag so that we have appropriate permissions
+# to modify the filesystem in the container.
+RUN npm run postinstall --unsafe-perm
