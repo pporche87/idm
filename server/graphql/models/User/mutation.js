@@ -4,12 +4,11 @@ import {GraphQLError} from 'graphql/error'
 import {GraphQLEmail, GraphQLDateTime} from 'graphql-custom-types'
 
 import {GraphQLPhoneNumber} from 'src/server/graphql/models/types'
-import {USER_ROLES} from 'src/common/models/user'
 import {User as ThinkyUser, UserAvatar} from 'src/server/services/dataService'
+import deactivateUser from 'src/server/actions/deactivateUser'
+import {userCan} from 'src/common/util'
 
 import {User} from './schema'
-
-import deactivateUser from 'src/server/actions/deactivateUser'
 
 const InputUser = new GraphQLInputObjectType({
   name: 'InputUser',
@@ -32,10 +31,7 @@ export default {
       id: {type: new GraphQLNonNull(GraphQLID)},
     },
     async resolve(source, {id}, {rootValue: {currentUser}}) {
-      const currentUserIsAuthorized = (currentUser && Array.isArray(currentUser.roles) &&
-        currentUser.roles.includes(USER_ROLES.ADMIN))
-
-      if (!currentUser || !currentUserIsAuthorized) {
+      if (!userCan(currentUser, 'deactivateUser')) {
         throw new GraphQLError('You are not authorized to do that.')
       }
 
@@ -48,8 +44,7 @@ export default {
       user: {type: new GraphQLNonNull(InputUser)},
     },
     async resolve(source, {user}, {rootValue: {currentUser}}) {
-      const currentUserIsAdmin = (currentUser && currentUser.roles && currentUser.roles.indexOf('admin') >= 0)
-      if (!currentUser || (user.id !== currentUser.id && !currentUserIsAdmin)) {
+      if (!userCan(currentUser, 'updateUser') && user.id !== currentUser.id) {
         throw new GraphQLError('You are not authorized to do that.')
       }
 

@@ -2,8 +2,11 @@ import {GraphQLNonNull, GraphQLString, GraphQLBoolean} from 'graphql'
 import {GraphQLInputObjectType, GraphQLList} from 'graphql/type'
 import {GraphQLError} from 'graphql/error'
 
+import {userCan} from 'src/common/util'
 import {InviteCode as ThinkyInviteCode} from 'src/server/services/dataService'
 import {InviteCode} from './schema'
+
+
 
 const InputInviteCode = new GraphQLInputObjectType({
   name: 'InputInviteCode',
@@ -25,8 +28,7 @@ export default {
     },
     async resolve(source, {inviteCode}, {rootValue: {currentUser}}) {
       try {
-        const currentUserIsAdmin = (currentUser && currentUser.roles && currentUser.roles.indexOf('admin') >= 0)
-        if (!currentUserIsAdmin) {
+        if (!userCan(currentUser, 'createInviteCode')) {
           throw new GraphQLError('You are not authorized to do that')
         }
 
