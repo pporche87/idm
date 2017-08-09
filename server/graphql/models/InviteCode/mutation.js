@@ -2,10 +2,8 @@ import {GraphQLNonNull, GraphQLString, GraphQLBoolean} from 'graphql'
 import {GraphQLInputObjectType, GraphQLList} from 'graphql/type'
 import {GraphQLError} from 'graphql/error'
 
-import {connect} from 'src/db'
+import {InviteCode as ThinkyInviteCode} from 'src/server/services/dataService'
 import {InviteCode} from './schema'
-
-const r = connect()
 
 const InputInviteCode = new GraphQLInputObjectType({
   name: 'InputInviteCode',
@@ -32,7 +30,10 @@ export default {
           throw new GraphQLError('You are not authorized to do that')
         }
 
-        const inviteCodes = await r.table('inviteCodes').getAll(inviteCode.code, {index: 'code'}).limit(1).run()
+        const inviteCodes = await ThinkyInviteCode
+          .getAll(inviteCode.code, {index: 'code'})
+          .limit(1)
+          .run()
         const result = inviteCodes[0]
         if (result) {
           throw new GraphQLError('Invite codes must be unique')
@@ -41,16 +42,14 @@ export default {
         const active = inviteCode.active !== false
         const permanent = inviteCode.permanent === true
         const inviteCodeWithFlags = {...inviteCode, active, permanent}
-        const inviteCodeWithTimestamps = {...inviteCodeWithFlags, createdAt: r.now(), updatedAt: r.now()}
-        const insertedInviteCode = await r.table('inviteCodes')
-          .insert(inviteCodeWithTimestamps, {returnChanges: 'always'})
-          .run()
 
-        if (insertedInviteCode.inserted) {
-          return insertedInviteCode.changes[0].new_val
+        try {
+          const insertedInviteCode = await ThinkyInviteCode
+            .save(inviteCodeWithFlags)
+          return insertedInviteCode
+        } catch (err) {
+          throw new GraphQLError('Could not create invite code, please try again')
         }
-
-        throw new GraphQLError('Could not create invite code, please try again')
       } catch (err) {
         throw err
       }

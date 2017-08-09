@@ -5,13 +5,11 @@ import {GraphQLEmail, GraphQLDateTime} from 'graphql-custom-types'
 
 import {GraphQLPhoneNumber} from 'src/server/graphql/models/types'
 import {USER_ROLES} from 'src/common/models/user'
-import {connect} from 'src/db'
+import {User as ThinkyUser, UserAvatar} from 'src/server/services/dataService'
 
 import {User} from './schema'
 
 import deactivateUser from 'src/server/actions/deactivateUser'
-
-const r = connect()
 
 const InputUser = new GraphQLInputObjectType({
   name: 'InputUser',
@@ -55,19 +53,14 @@ export default {
         throw new GraphQLError('You are not authorized to do that.')
       }
 
-      const userWithTimestamps = Object.assign(user, {updatedAt: r.now()})
-      const updatedUser = await r.table('users')
-        .get(user.id)
-        .update(userWithTimestamps, {returnChanges: 'always'})
-        .run()
-
-      if (updatedUser.replaced) {
-        return updatedUser.changes[0].new_val
-      } else if (updatedUser.unchanged) {
-        return updatedUser.changes[0].old_val
+      try {
+        const updatedUser = await ThinkyUser
+          .get(user.id)
+          .updateWithTimestamp(user)
+        return updatedUser
+      } catch (error) {
+        throw new GraphQLError('Could not update user, please try again')
       }
-
-      throw new GraphQLError('Could not update user, please try again')
     },
   },
   updateUserAvatar: {
@@ -77,15 +70,7 @@ export default {
     },
     async resolve(source, {base64ImgData}, {rootValue: {currentUser}}) {
       const jpegData = new Buffer(base64ImgData, 'base64')
-      await r.table('userAvatars')
-        .get(currentUser.id)
-        .replace(userAvatar => {
-          return r.branch(
-            userAvatar.eq(null),
-            {id: currentUser.id, jpegData, createdAt: r.now(), updatedAt: r.now()},
-            userAvatar.merge({jpegData, updatedAt: r.now()})
-          )
-        })
+      await UserAvatar.upsert({id: currentUser.id, jpegData})
       return currentUser.id
     },
   }

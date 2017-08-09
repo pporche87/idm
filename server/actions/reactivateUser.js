@@ -1,10 +1,5 @@
-import {connect} from 'src/db'
+import {User} from 'src/server/services/dataService'
 
-const r = connect()
-
-export default async function reactivateUser(id) {
-  return r.table('users')
-    .get(id)
-    .update({active: true, updatedAt: r.now()}, {returnChanges: true})
-    .run()
+export default function reactivateUser(id) {
+  return User.get(id).updateWithTimestamp({active: true})
 }
