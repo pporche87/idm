@@ -3,10 +3,8 @@ import {GraphQLInputObjectType, GraphQLList} from 'graphql/type'
 import {GraphQLError} from 'graphql/error'
 
 import {userCan} from 'src/common/util'
-import {InviteCode as ThinkyInviteCode} from 'src/server/services/dataService'
+import {InviteCode as InviteCodeModel} from 'src/server/services/dataService'
 import {InviteCode} from './schema'
-
-
 
 const InputInviteCode = new GraphQLInputObjectType({
   name: 'InputInviteCode',
@@ -32,7 +30,7 @@ export default {
           throw new GraphQLError('You are not authorized to do that')
         }
 
-        const inviteCodes = await ThinkyInviteCode
+        const inviteCodes = await InviteCodeModel
           .getAll(inviteCode.code, {index: 'code'})
           .limit(1)
           .run()
@@ -46,9 +44,8 @@ export default {
         const inviteCodeWithFlags = {...inviteCode, active, permanent}
 
         try {
-          const insertedInviteCode = await ThinkyInviteCode
+          return InviteCodeModel
             .save(inviteCodeWithFlags)
-          return insertedInviteCode
         } catch (err) {
           throw new GraphQLError('Could not create invite code, please try again')
         }

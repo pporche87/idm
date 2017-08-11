@@ -4,7 +4,7 @@ import {GraphQLError} from 'graphql/error'
 import {GraphQLEmail, GraphQLDateTime} from 'graphql-custom-types'
 
 import {GraphQLPhoneNumber} from 'src/server/graphql/models/types'
-import {User as ThinkyUser, UserAvatar} from 'src/server/services/dataService'
+import {User as UserModel, UserAvatar} from 'src/server/services/dataService'
 import deactivateUser from 'src/server/actions/deactivateUser'
 import {userCan} from 'src/common/util'
 
@@ -49,7 +49,7 @@ export default {
       }
 
       try {
-        const updatedUser = await ThinkyUser
+        const updatedUser = await UserModel
           .get(user.id)
           .updateWithTimestamp(user)
         return updatedUser
