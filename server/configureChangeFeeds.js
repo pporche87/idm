@@ -26,7 +26,11 @@ function _getQueue(queueName) {
 
 function _getFeed() {
   return r.table('users')
-    .getAll(USER_ROLES.LEARNER, {index: 'roles'})
+    .filter(filteredUser => {
+      const isALearner = filteredUser('roles').contains(USER_ROLES.LEARNER)
+      const isNewlyCreated = filteredUser('createdAt').eq(filteredUser('updatedAt'))
+      return isALearner && isNewlyCreated
+    })
     .changes()
     .filter(r.row('old_val').eq(null))
 }
