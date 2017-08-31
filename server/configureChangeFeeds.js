@@ -27,8 +27,9 @@ function _getQueue(queueName) {
 function _getFeed() {
   return r.table('users')
     .filter(filteredUser => {
+      const updatedAt = filteredUser('updatedAt')
       const isALearner = filteredUser('roles').contains(USER_ROLES.LEARNER)
-      const isNewlyCreated = filteredUser('createdAt').eq(filteredUser('updatedAt'))
+      const isNewlyCreated = filteredUser('createdAt').during(updatedAt.sub(10), updatedAt.add(10))
       return isALearner && isNewlyCreated
     })
     .changes()
